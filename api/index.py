@@ -66,7 +66,14 @@ def _seed() -> Dict[str, Any]:
 
 # ── Storage: Vercel KV / Upstash Redis, with a local-file fallback ───────────
 STATE_KEY = "gauntlet:state"
-LOCAL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".local_state.json")
+# Local dev writes a gitignored file next to the code. On Vercel that dir is
+# read-only, so fall back to /tmp (per-instance, NOT persistent across cold starts —
+# set KV_REST_API_URL/TOKEN for real shared state).
+LOCAL_PATH = (
+    "/tmp/gauntlet_state.json"
+    if os.environ.get("VERCEL")
+    else os.path.join(os.path.dirname(os.path.abspath(__file__)), ".local_state.json")
+)
 
 
 def _kv_env() -> "tuple[Optional[str], Optional[str]]":
