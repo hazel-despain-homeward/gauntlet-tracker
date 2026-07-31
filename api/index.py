@@ -305,6 +305,28 @@ def finalize() -> Dict[str, Any]:
     return {**finalized, "view": _view(state)}
 
 
+@router.post("/reset")
+def reset_season() -> Dict[str, Any]:
+    """Wipe all weeks/times/winners and start over at a fresh, empty Week 1."""
+    from datetime import date
+
+    state = {
+        "teams": [dict(t) for t in TEAMS],
+        "weeks": [
+            {
+                "id": "w1",
+                "label": "Week 1",
+                "date": date.today().isoformat(),
+                "status": "open",
+                "winner": None,
+                "entries": {},
+            }
+        ],
+    }
+    save_state(state)
+    return _view(state)
+
+
 @router.post("/week/next")
 def next_week() -> Dict[str, Any]:
     state = get_or_seed()

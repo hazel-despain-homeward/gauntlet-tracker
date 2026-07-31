@@ -29,4 +29,5 @@ export const api = {
     }),
   finalize: () => request<FinalizeResult>('/finalize', { method: 'POST' }),
   nextWeek: () => request<StateView>('/week/next', { method: 'POST' }),
+  reset: () => request<StateView>('/reset', { method: 'POST' }),
 };

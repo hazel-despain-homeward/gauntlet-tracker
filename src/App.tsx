@@ -131,6 +131,26 @@ export default function App() {
     }
   };
 
+  const handleReset = async () => {
+    if (
+      !window.confirm(
+        'Reset the whole season? This permanently clears ALL weeks, times, and winners and starts over at a fresh Week 1. This cannot be undone.',
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      setError(null);
+      setView(await api.reset());
+      setFinalized(null);
+      setEditing(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not reset season');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Forget a remembered team that no longer exists in the roster.
   useEffect(() => {
     if (selectedTeam && view && !view.teams.some((t) => t.name === selectedTeam)) {
@@ -167,6 +187,7 @@ export default function App() {
                 teams={view.teams}
                 onEntry={handleEntry}
                 onDone={() => setEditing(false)}
+                onReset={handleReset}
               />
             ) : !selectedTeam ? (
               <TeamSelect teams={view.teams} onSelect={chooseTeam} />
