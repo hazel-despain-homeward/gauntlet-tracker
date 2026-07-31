@@ -135,6 +135,19 @@ export default function App() {
   const myEntry = selectedTeam && activeWeek ? activeWeek.entries[selectedTeam] : undefined;
   const myReported = !!(myEntry && (myEntry.dnp || myEntry.seconds != null));
 
+  // Switching team is a correction: clear the time logged for the team you're
+  // leaving so it doesn't linger on the wrong team.
+  const switchTeam = async () => {
+    if (selectedTeam && myReported) {
+      const ok = window.confirm(
+        `You logged a time for ${selectedTeam} this week. Switching teams will clear it. Continue?`,
+      );
+      if (!ok) return;
+      await handleEntry(selectedTeam, null, false);
+    }
+    clearTeam();
+  };
+
   return (
     <>
       <Header />
@@ -164,7 +177,7 @@ export default function App() {
                 myTeam={selectedTeam}
                 onViewRules={() => setRulesOpen(true)}
                 onRedo={() => handleEntry(selectedTeam, null, false)}
-                onSwitch={clearTeam}
+                onSwitch={switchTeam}
               />
             ) : (
               <PlayScreen
@@ -173,7 +186,7 @@ export default function App() {
                 onLog={(seconds) => handleEntry(selectedTeam, seconds, false)}
                 onDnp={() => handleEntry(selectedTeam, null, true)}
                 onViewRules={() => setRulesOpen(true)}
-                onSwitch={clearTeam}
+                onSwitch={switchTeam}
               />
             )
           ) : (
