@@ -215,7 +215,6 @@ export function WeekResults({ week, teams, progress, myTeam, onViewRules, onRedo
     <Name>
       <span className="dot" style={{ background: colorOf(name) }} />
       {name}
-      {name === myTeam && <span className="you">YOU</span>}
     </Name>
   );
 

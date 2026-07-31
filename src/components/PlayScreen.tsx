@@ -62,13 +62,6 @@ const OpenGames = styled.button`
   }
 `;
 
-const GameHint = styled.p`
-  margin: 8px 0 0;
-  font-size: 11.5px;
-  color: ${TEXT_COLOR.SECONDARY};
-  text-align: center;
-`;
-
 const Watch = styled.div`
   margin: 26px 0 18px;
   text-align: center;
@@ -222,8 +215,16 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onSwitch }: 
   };
 
   const openGames = () => {
+    // Anchor-click per URL (synchronously, in the click gesture) opens all four
+    // tabs reliably — a window.open loop gets all-but-the-first blocked as pop-ups.
     for (const g of GAMES) {
-      window.open(g.url, '_blank', 'noopener,noreferrer');
+      const a = document.createElement('a');
+      a.href = g.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     }
   };
 
@@ -238,8 +239,7 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onSwitch }: 
         <Title>You’re up, {team}</Title>
         <Sub>Open the games, start the clock, play all four, then stop — lowest time wins.</Sub>
 
-        <OpenGames onClick={openGames}>Open all four games ↗</OpenGames>
-        <GameHint>Opens Contexto, Connections, Strands & Wordle in new tabs. Allow pop-ups if prompted.</GameHint>
+        <OpenGames onClick={openGames}>Open games ↗</OpenGames>
 
         <Watch>
           <Clock $running={running}>{fmtWatch(ms)}</Clock>
