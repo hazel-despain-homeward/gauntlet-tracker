@@ -154,7 +154,7 @@ const DnpBtn = styled(LinkBtn)`
   color: ${MESSAGING_COLOR.ACCENT.WARNING};
 `;
 
-const Switch = styled.button`
+const EditLink = styled.button`
   appearance: none;
   border: none;
   background: none;
@@ -166,6 +166,7 @@ const Switch = styled.button`
   padding: 0;
 
   &:hover {
+    color: ${TEXT_COLOR.PRIMARY};
     text-decoration: underline;
   }
 `;
@@ -184,10 +185,10 @@ interface Props {
   onLog: (seconds: number) => void;
   onDnp: () => void;
   onViewRules: () => void;
-  onSwitch: () => void;
+  onEdit: () => void;
 }
 
-export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onSwitch }: Props) {
+export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit }: Props) {
   const [running, setRunning] = useState(false);
   const [ms, setMs] = useState(0);
   const baseRef = useRef(0); // performance.now() at (start - elapsed)
@@ -273,7 +274,7 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onSwitch }: 
         </Foot>
       </Card>
 
-      <Switch onClick={onSwitch}>Not {team}? Switch team</Switch>
+      <EditLink onClick={onEdit}>✎ Edit times</EditLink>
     </section>
   );
 }

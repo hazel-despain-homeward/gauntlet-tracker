@@ -8,6 +8,7 @@ import { TabBar, type TabKey } from './components/TabBar';
 import { TeamSelect } from './components/TeamSelect';
 import { PlayScreen } from './components/PlayScreen';
 import { WeekResults } from './components/WeekResults';
+import { EditTimes } from './components/EditTimes';
 import { WinnerCard } from './components/WinnerCard';
 import { RecentWinners } from './components/RecentWinners';
 import { RulesModal } from './components/RulesModal';
@@ -53,6 +54,7 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<TabKey>('current');
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(() =>
     localStorage.getItem('gauntlet:team'),
   );
@@ -60,10 +62,6 @@ export default function App() {
   const chooseTeam = (name: string) => {
     localStorage.setItem('gauntlet:team', name);
     setSelectedTeam(name);
-  };
-  const clearTeam = () => {
-    localStorage.removeItem('gauntlet:team');
-    setSelectedTeam(null);
   };
 
   const load = useCallback(async () => {
@@ -105,7 +103,10 @@ export default function App() {
       const resp = await api.setEntry(team, seconds, dnp);
       setView(resp.view);
       // The 7th report auto-finalizes and posts to Slack on the server.
-      if (resp.finalized) setFinalized(resp.finalized);
+      if (resp.finalized) {
+        setFinalized(resp.finalized);
+        setEditing(false);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save entry');
     }
@@ -117,6 +118,7 @@ export default function App() {
       setError(null);
       setView(await api.nextWeek());
       setFinalized(null);
+      setEditing(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start next week');
     } finally {
@@ -134,19 +136,6 @@ export default function App() {
 
   const myEntry = selectedTeam && activeWeek ? activeWeek.entries[selectedTeam] : undefined;
   const myReported = !!(myEntry && (myEntry.dnp || myEntry.seconds != null));
-
-  // Switching team is a correction: clear the time logged for the team you're
-  // leaving so it doesn't linger on the wrong team.
-  const switchTeam = async () => {
-    if (selectedTeam && myReported) {
-      const ok = window.confirm(
-        `You logged a time for ${selectedTeam} this week. Switching teams will clear it. Continue?`,
-      );
-      if (!ok) return;
-      await handleEntry(selectedTeam, null, false);
-    }
-    clearTeam();
-  };
 
   return (
     <>
@@ -167,7 +156,14 @@ export default function App() {
               onNext={handleNext}
             />
           ) : activeWeek && view.progress ? (
-            !selectedTeam ? (
+            editing ? (
+              <EditTimes
+                week={activeWeek}
+                teams={view.teams}
+                onEntry={handleEntry}
+                onDone={() => setEditing(false)}
+              />
+            ) : !selectedTeam ? (
               <TeamSelect teams={view.teams} onSelect={chooseTeam} />
             ) : myReported ? (
               <WeekResults
@@ -177,7 +173,7 @@ export default function App() {
                 myTeam={selectedTeam}
                 onViewRules={() => setRulesOpen(true)}
                 onRedo={() => handleEntry(selectedTeam, null, false)}
-                onSwitch={switchTeam}
+                onEdit={() => setEditing(true)}
               />
             ) : (
               <PlayScreen
@@ -186,7 +182,7 @@ export default function App() {
                 onLog={(seconds) => handleEntry(selectedTeam, seconds, false)}
                 onDnp={() => handleEntry(selectedTeam, null, true)}
                 onViewRules={() => setRulesOpen(true)}
-                onSwitch={switchTeam}
+                onEdit={() => setEditing(true)}
               />
             )
           ) : (
