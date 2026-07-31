@@ -5,7 +5,9 @@ import { api } from './api/client';
 import type { Finalized, StateView } from './types';
 import { Header } from './components/Header';
 import { TabBar, type TabKey } from './components/TabBar';
-import { WeekBoard } from './components/WeekBoard';
+import { TeamSelect } from './components/TeamSelect';
+import { PlayScreen } from './components/PlayScreen';
+import { WeekResults } from './components/WeekResults';
 import { WinnerCard } from './components/WinnerCard';
 import { RecentWinners } from './components/RecentWinners';
 import { RulesModal } from './components/RulesModal';
@@ -51,6 +53,18 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<TabKey>('current');
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(() =>
+    localStorage.getItem('gauntlet:team'),
+  );
+
+  const chooseTeam = (name: string) => {
+    localStorage.setItem('gauntlet:team', name);
+    setSelectedTeam(name);
+  };
+  const clearTeam = () => {
+    localStorage.removeItem('gauntlet:team');
+    setSelectedTeam(null);
+  };
 
   const load = useCallback(async () => {
     try {
@@ -110,6 +124,17 @@ export default function App() {
     }
   };
 
+  // Forget a remembered team that no longer exists in the roster.
+  useEffect(() => {
+    if (selectedTeam && view && !view.teams.some((t) => t.name === selectedTeam)) {
+      localStorage.removeItem('gauntlet:team');
+      setSelectedTeam(null);
+    }
+  }, [selectedTeam, view]);
+
+  const myEntry = selectedTeam && activeWeek ? activeWeek.entries[selectedTeam] : undefined;
+  const myReported = !!(myEntry && (myEntry.dnp || myEntry.seconds != null));
+
   return (
     <>
       <Header />
@@ -129,13 +154,28 @@ export default function App() {
               onNext={handleNext}
             />
           ) : activeWeek && view.progress ? (
-            <WeekBoard
-              week={activeWeek}
-              teams={view.teams}
-              progress={view.progress}
-              onEntry={handleEntry}
-              onViewRules={() => setRulesOpen(true)}
-            />
+            !selectedTeam ? (
+              <TeamSelect teams={view.teams} onSelect={chooseTeam} />
+            ) : myReported ? (
+              <WeekResults
+                week={activeWeek}
+                teams={view.teams}
+                progress={view.progress}
+                myTeam={selectedTeam}
+                onViewRules={() => setRulesOpen(true)}
+                onRedo={() => handleEntry(selectedTeam, null, false)}
+                onSwitch={clearTeam}
+              />
+            ) : (
+              <PlayScreen
+                week={activeWeek}
+                team={selectedTeam}
+                onLog={(seconds) => handleEntry(selectedTeam, seconds, false)}
+                onDnp={() => handleEntry(selectedTeam, null, true)}
+                onViewRules={() => setRulesOpen(true)}
+                onSwitch={clearTeam}
+              />
+            )
           ) : (
             <Muted>No active week. (Finalize the current one to start the next.)</Muted>
           ))}
