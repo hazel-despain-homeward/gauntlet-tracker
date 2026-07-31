@@ -121,6 +121,10 @@ const Btn = styled.button<{ $variant: 'primary' | 'secondary' | 'ghost' }>`
   &:active {
     transform: translateY(1px);
   }
+  &:disabled {
+    opacity: 0.65;
+    cursor: default;
+  }
 `;
 
 const Foot = styled.div`
@@ -196,6 +200,7 @@ interface Props {
 
 export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onChangeTeam }: Props) {
   const [running, setRunning] = useState(false);
+  const [logging, setLogging] = useState(false);
   const [ms, setMs] = useState(0);
   const baseRef = useRef(0); // performance.now() at (start - elapsed)
   const rafRef = useRef<number | null>(null);
@@ -231,6 +236,7 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onCh
   const stop = () => {
     const finalMs = performance.now() - baseRef.current;
     halt();
+    setLogging(true); // hold a "Logging…" state through the save so no idle button flashes
     onLog(Math.max(1, Math.round(finalMs / 1000)));
   };
 
@@ -257,10 +263,16 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onCh
           <Clock $running={running}>{fmtWatch(ms)}</Clock>
         </Watch>
 
-        {!running ? (
+        {logging ? (
+          <Buttons>
+            <Btn $variant="primary" disabled>
+              Logging…
+            </Btn>
+          </Buttons>
+        ) : !running ? (
           <Buttons>
             <Btn $variant="primary" onClick={start}>
-              {ms > 0 ? 'Resume' : 'Start'}
+              Start
             </Btn>
           </Buttons>
         ) : (
