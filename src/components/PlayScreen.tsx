@@ -154,7 +154,13 @@ const DnpBtn = styled(LinkBtn)`
   color: ${MESSAGING_COLOR.ACCENT.WARNING};
 `;
 
-const EditLink = styled.button`
+const BottomLinks = styled.div`
+  display: flex;
+  gap: 18px;
+  margin-top: 14px;
+`;
+
+const MiniLink = styled.button`
   appearance: none;
   border: none;
   background: none;
@@ -162,7 +168,6 @@ const EditLink = styled.button`
   font-family: inherit;
   font-size: 12px;
   color: ${TEXT_COLOR.SECONDARY};
-  margin-top: 14px;
   padding: 0;
 
   &:hover {
@@ -186,9 +191,10 @@ interface Props {
   onDnp: () => void;
   onViewRules: () => void;
   onEdit: () => void;
+  onChangeTeam: () => void;
 }
 
-export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit }: Props) {
+export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onChangeTeam }: Props) {
   const [running, setRunning] = useState(false);
   const [ms, setMs] = useState(0);
   const baseRef = useRef(0); // performance.now() at (start - elapsed)
@@ -274,7 +280,10 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit }: Pr
         </Foot>
       </Card>
 
-      <EditLink onClick={onEdit}>✎ Edit times</EditLink>
+      <BottomLinks>
+        <MiniLink onClick={onChangeTeam}>← Change team</MiniLink>
+        <MiniLink onClick={onEdit}>✎ Edit times</MiniLink>
+      </BottomLinks>
     </section>
   );
 }

@@ -63,6 +63,11 @@ export default function App() {
     localStorage.setItem('gauntlet:team', name);
     setSelectedTeam(name);
   };
+  // Change identity only — never touches recorded times (fix those via Edit times).
+  const changeTeam = () => {
+    localStorage.removeItem('gauntlet:team');
+    setSelectedTeam(null);
+  };
 
   const load = useCallback(async () => {
     try {
@@ -174,6 +179,7 @@ export default function App() {
                 onViewRules={() => setRulesOpen(true)}
                 onRedo={() => handleEntry(selectedTeam, null, false)}
                 onEdit={() => setEditing(true)}
+                onChangeTeam={changeTeam}
               />
             ) : (
               <PlayScreen
@@ -183,6 +189,7 @@ export default function App() {
                 onDnp={() => handleEntry(selectedTeam, null, true)}
                 onViewRules={() => setRulesOpen(true)}
                 onEdit={() => setEditing(true)}
+                onChangeTeam={changeTeam}
               />
             )
           ) : (

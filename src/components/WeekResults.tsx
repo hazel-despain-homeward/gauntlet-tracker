@@ -194,9 +194,19 @@ interface Props {
   onViewRules: () => void;
   onRedo: () => void;
   onEdit: () => void;
+  onChangeTeam: () => void;
 }
 
-export function WeekResults({ week, teams, progress, myTeam, onViewRules, onRedo, onEdit }: Props) {
+export function WeekResults({
+  week,
+  teams,
+  progress,
+  myTeam,
+  onViewRules,
+  onRedo,
+  onEdit,
+  onChangeTeam,
+}: Props) {
   const colorOf = (name: string) => teamColor(teams.findIndex((t) => t.name === name));
 
   const played = teams
@@ -274,6 +284,7 @@ export function WeekResults({ week, teams, progress, myTeam, onViewRules, onRedo
       </FootNote>
 
       <Actions>
+        <LinkBtn onClick={onChangeTeam}>← Change team</LinkBtn>
         <LinkBtn onClick={onRedo}>Redo my time</LinkBtn>
         <LinkBtn onClick={onEdit}>✎ Edit times</LinkBtn>
       </Actions>
