@@ -38,22 +38,35 @@ const Sub = styled.p`
   color: ${TEXT_COLOR.SECONDARY};
 `;
 
-const OpenGames = styled.button`
-  appearance: none;
-  width: 100%;
-  border: none;
-  border-radius: 12px;
+const GameGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+
+  @media (max-width: 460px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const GameBtn = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
   background: ${BRAND_COLOR.PRIMARY};
   color: ${NAMED_COLOR.WHITE};
-  font-family: inherit;
   font-weight: 700;
-  font-size: 16px;
-  padding: 15px;
-  cursor: pointer;
+  font-size: 15px;
+  padding: 14px 16px;
+  border-radius: 12px;
   transition:
     background 0.15s,
     transform 0.05s;
 
+  span {
+    opacity: 0.7;
+    font-weight: 400;
+  }
   &:hover {
     background: #26394c;
   }
@@ -214,20 +227,6 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onSwitch }: 
     onLog(Math.max(1, Math.round(finalMs / 1000)));
   };
 
-  const openGames = () => {
-    // Anchor-click per URL (synchronously, in the click gesture) opens all four
-    // tabs reliably — a window.open loop gets all-but-the-first blocked as pop-ups.
-    for (const g of GAMES) {
-      const a = document.createElement('a');
-      a.href = g.url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }
-  };
-
   const dnp = () => {
     if (window.confirm(`Mark ${team} as “Did not play” for ${week.label}?`)) onDnp();
   };
@@ -239,7 +238,13 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onSwitch }: 
         <Title>You’re up, {team}</Title>
         <Sub>Open the games, start the clock, play all four, then stop — lowest time wins.</Sub>
 
-        <OpenGames onClick={openGames}>Open games ↗</OpenGames>
+        <GameGrid>
+          {GAMES.map((g) => (
+            <GameBtn key={g.name} href={g.url} target="_blank" rel="noopener noreferrer">
+              {g.name} <span>↗</span>
+            </GameBtn>
+          ))}
+        </GameGrid>
 
         <Watch>
           <Clock $running={running}>{fmtWatch(ms)}</Clock>
