@@ -23,7 +23,7 @@ TEAMS: List[Dict[str, str]] = [
     {"id": "it", "name": "IT"},
     {"id": "mtt", "name": "MTT"},
     {"id": "new-biz", "name": "New Biz"},
-    {"id": "pre-list", "name": "Pre-List"},
+    {"id": "repair-management", "name": "Repair Management"},
     {"id": "purchase", "name": "Purchase"},
 ]
 
@@ -42,7 +42,7 @@ def _seed() -> Dict[str, Any]:
                 "slack": {"posted": False, "channel": "test-gauntlet-notification"},
                 "entries": {
                     "Approve": played(762), "Disposition": played(745), "IT": played(700),
-                    "MTT": played(820), "New Biz": played(758), "Pre-List": played(845),
+                    "MTT": played(820), "New Biz": played(758), "Repair Management": played(845),
                     "Purchase": played(705),
                 },
             },
@@ -52,7 +52,7 @@ def _seed() -> Dict[str, Any]:
                 "slack": {"posted": False, "channel": "test-gauntlet-notification"},
                 "entries": {
                     "Approve": played(740), "Disposition": played(690), "IT": played(731),
-                    "MTT": played(798), "New Biz": played(775), "Pre-List": dict(dnp),
+                    "MTT": played(798), "New Biz": played(775), "Repair Management": dict(dnp),
                     "Purchase": played(741),
                 },
             },
