@@ -25,6 +25,7 @@ TEAMS: List[Dict[str, str]] = [
     {"id": "new-biz", "name": "New Biz"},
     {"id": "repair-management", "name": "Repair Management"},
     {"id": "purchase", "name": "Purchase"},
+    {"id": "engineering-managers", "name": "Engineering Managers"},
 ]
 
 
@@ -43,7 +44,7 @@ def _seed() -> Dict[str, Any]:
                 "entries": {
                     "Approve": played(762), "Disposition": played(745), "IT": played(700),
                     "MTT": played(820), "New Biz": played(758), "Repair Management": played(845),
-                    "Purchase": played(705),
+                    "Purchase": played(705), "Engineering Managers": played(772),
                 },
             },
             {
@@ -53,7 +54,7 @@ def _seed() -> Dict[str, Any]:
                 "entries": {
                     "Approve": played(740), "Disposition": played(690), "IT": played(731),
                     "MTT": played(798), "New Biz": played(775), "Repair Management": dict(dnp),
-                    "Purchase": played(741),
+                    "Purchase": played(741), "Engineering Managers": played(760),
                 },
             },
             {

@@ -16,15 +16,14 @@ const Sub = styled.p`
 `;
 
 const Grid = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  /* Columns stretch to fill the full width; count adapts to screen size. */
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
 `;
 
 const TeamButton = styled.button`
   appearance: none;
-  flex: 0 0 calc(25% - 9px); /* 4 per row; the last 3 center under them */
   display: flex;
   align-items: center;
   gap: 11px;
@@ -49,10 +48,6 @@ const TeamButton = styled.button`
   }
   &:active {
     transform: translateY(1px);
-  }
-
-  @media (max-width: 620px) {
-    flex-basis: calc(50% - 6px);
   }
 `;
 
