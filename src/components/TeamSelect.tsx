@@ -16,14 +16,16 @@ const Sub = styled.p`
 `;
 
 const Grid = styled.div`
-  display: grid;
-  /* Columns stretch to fill the full width; count adapts to screen size. */
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 `;
 
 const TeamButton = styled.button`
   appearance: none;
+  /* Grow to fill each row; ~190px basis => 4 per row on desktop (8 teams = 4+4),
+     and any partial last row stretches to fill instead of leaving a gap. */
+  flex: 1 1 190px;
   display: flex;
   align-items: center;
   gap: 11px;
