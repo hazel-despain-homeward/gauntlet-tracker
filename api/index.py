@@ -306,6 +306,53 @@ def finalize() -> Dict[str, Any]:
     return {**finalized, "view": _view(state)}
 
 
+@router.get("/cron/auto-finalize")
+def cron_auto_finalize() -> Dict[str, Any]:
+    """Ran by Vercel Cron. At/after 1 PM America/Chicago, mark any team that hasn't
+    reported as DNP, then finalize the open week (crowning a winner + posting to Slack).
+    Scheduled at both 18:00 and 19:00 UTC so it lands at 1 PM Central in CDT and CST;
+    the guard below ensures it only acts at/after 1 PM local either way."""
+    try:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        central = datetime.now(ZoneInfo("America/Chicago"))
+        if central.hour < 13:
+            return {"status": "skipped", "reason": "before 1pm central", "central_hour": central.hour}
+    except Exception:
+        pass  # if tz data is unavailable, don't block the finalize
+
+    state = get_or_seed()
+    week = _active_week(state)
+    if week is None:
+        return {"status": "skipped", "reason": "no open week"}
+
+    teams = state["teams"]
+    has_real_time = any(
+        (week["entries"].get(t["name"]) or {}).get("seconds") is not None
+        and not (week["entries"].get(t["name"]) or {}).get("dnp")
+        for t in teams
+    )
+    if not has_real_time:
+        return {"status": "skipped", "reason": "no times logged — nobody to crown"}
+
+    auto_dnp = []
+    for t in teams:
+        if not entry_reported(week, t["name"]):
+            week["entries"][t["name"]] = {"seconds": None, "dnp": True}
+            auto_dnp.append(t["name"])
+
+    finalized = _finalize_week(state, week)
+    save_state(state)
+    return {
+        "status": "finalized",
+        "week": week["label"],
+        "winner": week["winner"],
+        "auto_dnp": auto_dnp,
+        "slack_posted": bool(finalized and finalized["slack"]["posted"]),
+    }
+
+
 @router.post("/reset")
 def reset_season() -> Dict[str, Any]:
     """Wipe all weeks/times/winners and start over at a fresh, empty Week 1."""
