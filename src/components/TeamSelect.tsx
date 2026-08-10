@@ -23,9 +23,9 @@ const Grid = styled.div`
 
 const TeamButton = styled.button`
   appearance: none;
-  /* Grow to fill each row; ~190px basis => 4 per row on desktop (8 teams = 4+4),
+  /* Grow to fill each row; ~250px basis => 3 per row on desktop (9 teams = 3x3),
      and any partial last row stretches to fill instead of leaving a gap. */
-  flex: 1 1 190px;
+  flex: 1 1 250px;
   display: flex;
   align-items: center;
   gap: 11px;
