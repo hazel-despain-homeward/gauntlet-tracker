@@ -276,7 +276,7 @@ export function WeekResults({
         {remaining > 0 ? (
           <span>
             Waiting on <b>{remaining}</b> more team{remaining === 1 ? '' : 's'}. The winner posts
-            automatically once everyone’s in.
+            automatically once everyone’s in — or by <b>1 PM CST</b>, whichever comes first.
           </span>
         ) : (
           <span>All teams reported — crowning the winner…</span>

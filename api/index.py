@@ -20,13 +20,13 @@ from pydantic import BaseModel
 TEAMS: List[Dict[str, str]] = [
     {"id": "approve", "name": "Approve"},
     {"id": "disposition", "name": "Disposition"},
+    {"id": "engineering-managers", "name": "Engineering Managers"},
     {"id": "it", "name": "IT"},
     {"id": "mtt", "name": "MTT"},
     {"id": "new-biz", "name": "New Biz"},
-    {"id": "repair-management", "name": "Repair Management"},
-    {"id": "purchase", "name": "Purchase"},
-    {"id": "engineering-managers", "name": "Engineering Managers"},
     {"id": "platform", "name": "Platform"},
+    {"id": "purchase", "name": "Purchase"},
+    {"id": "repair-management", "name": "Repair Management"},
 ]
 
 
