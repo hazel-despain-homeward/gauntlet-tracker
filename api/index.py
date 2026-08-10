@@ -26,6 +26,7 @@ TEAMS: List[Dict[str, str]] = [
     {"id": "repair-management", "name": "Repair Management"},
     {"id": "purchase", "name": "Purchase"},
     {"id": "engineering-managers", "name": "Engineering Managers"},
+    {"id": "platform", "name": "Platform"},
 ]
 
 
@@ -45,6 +46,7 @@ def _seed() -> Dict[str, Any]:
                     "Approve": played(762), "Disposition": played(745), "IT": played(700),
                     "MTT": played(820), "New Biz": played(758), "Repair Management": played(845),
                     "Purchase": played(705), "Engineering Managers": played(772),
+                    "Platform": played(731),
                 },
             },
             {
@@ -55,6 +57,7 @@ def _seed() -> Dict[str, Any]:
                     "Approve": played(740), "Disposition": played(690), "IT": played(731),
                     "MTT": played(798), "New Biz": played(775), "Repair Management": dict(dnp),
                     "Purchase": played(741), "Engineering Managers": played(760),
+                    "Platform": played(749),
                 },
             },
             {
@@ -351,6 +354,17 @@ def cron_auto_finalize() -> Dict[str, Any]:
         "auto_dnp": auto_dnp,
         "slack_posted": bool(finalized and finalized["slack"]["posted"]),
     }
+
+
+@router.post("/sync-teams")
+def sync_teams() -> Dict[str, Any]:
+    """Update the live roster to match the code's TEAMS list WITHOUT touching any
+    week data — used to add/rename teams during an in-progress season (unlike reset,
+    which wipes everything). New teams simply appear as 'not reported' in open weeks."""
+    state = get_or_seed()
+    state["teams"] = [dict(t) for t in TEAMS]
+    save_state(state)
+    return _view(state)
 
 
 @router.post("/reset")
