@@ -166,7 +166,40 @@ def compute_winner(week: Dict[str, Any], teams: List[Dict[str, Any]]) -> Optiona
     return ranked[0]["team"] if ranked else None
 
 
-def build_slack_message(week: Dict[str, Any], teams: List[Dict[str, Any]], winner: str) -> str:
+def _played(week: Dict[str, Any], team_name: str) -> bool:
+    e = week.get("entries", {}).get(team_name)
+    return bool(e) and not e.get("dnp") and e.get("seconds") is not None
+
+
+def _win_streak(weeks: List[Dict[str, Any]], winner: str) -> int:
+    """Consecutive most-recent finalized weeks won by `winner` (includes this week)."""
+    streak = 0
+    for w in reversed([x for x in weeks if x["status"] == "final"]):
+        if w.get("winner") == winner:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def _attendance_streaks(weeks: List[Dict[str, Any]], teams: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Per team: consecutive most-recent finalized weeks they logged a time (DNP breaks it)."""
+    finals = [x for x in weeks if x["status"] == "final"]
+    out = {}
+    for t in teams:
+        streak = 0
+        for w in reversed(finals):
+            if _played(w, t["name"]):
+                streak += 1
+            else:
+                break
+        out[t["name"]] = streak
+    return out
+
+
+def build_slack_message(
+    week: Dict[str, Any], teams: List[Dict[str, Any]], winner: str, weeks: List[Dict[str, Any]]
+) -> str:
     ranked = _ranked_players(week, teams)
     medals = ["🥇", "🥈", "🥉"]
     lines = [
@@ -177,11 +210,28 @@ def build_slack_message(week: Dict[str, Any], teams: List[Dict[str, Any]], winne
         if (week.get("entries", {}).get(t["name"]) or {}).get("dnp"):
             lines.append("  • {}: Did not play".format(t["name"]))
     win_time = format_time(week["entries"][winner]["seconds"])
-    return (
+
+    msg = (
         "🏆 *Gauntlet {label} results are in!*\n\n"
         "Congratulations to *{winner}* for the fastest time of the week at *{time}*! 👏\n\n"
         "{board}"
     ).format(label=week["label"], winner=winner, time=win_time, board="\n".join(lines))
+
+    # 📊 Streaks — shown only when there's an actual streak (>= 2 weeks).
+    streak_lines = []
+    ws = _win_streak(weeks, winner)
+    if ws >= 2:
+        streak_lines.append("🔥 Win streak — *{}*, {} weeks running".format(winner, ws))
+    att = _attendance_streaks(weeks, teams)
+    max_att = max(att.values()) if att else 0
+    if max_att >= 2:
+        leaders = [t["name"] for t in teams if att.get(t["name"]) == max_att]
+        who = " & ".join(leaders) if len(leaders) <= 2 else ", ".join(leaders)
+        streak_lines.append("🎯 Longest attendance — *{}*, {} weeks in a row".format(who, max_att))
+    if streak_lines:
+        msg += "\n\n*📊 Streaks*\n" + "\n".join(streak_lines)
+
+    return msg
 
 
 # ── Slack posting (stdlib only) ──────────────────────────────────────────────
@@ -254,7 +304,7 @@ def _finalize_week(state: Dict[str, Any], week: Dict[str, Any]) -> Optional[Dict
         return None
     week["winner"] = winner
     week["status"] = "final"
-    message = build_slack_message(week, state["teams"], winner)
+    message = build_slack_message(week, state["teams"], winner, state["weeks"])
     result = slack_post(message)
     week["slack"] = {
         "posted": result["posted"], "channel": result["channel"],
