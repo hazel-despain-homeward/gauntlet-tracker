@@ -12,6 +12,7 @@ import type { Team, Week } from '../types';
 import type { TeamStat } from '../util/stats';
 import { formatTime } from '../util/time';
 import { computeStats } from '../util/stats';
+import { MonthlyStandings } from './MonthlyStandings';
 import { Card, SectionEyebrow } from './ui';
 
 type SortKey = 'wins' | 'played' | 'avg' | 'best';
@@ -215,6 +216,8 @@ export function StatsPage({ weeks, teams }: Props) {
 
   return (
     <>
+      <MonthlyStandings weeks={weeks} teams={teams} />
+
       <SectionEyebrow>Records · {stats.weeksCompleted} week{stats.weeksCompleted === 1 ? '' : 's'}</SectionEyebrow>
       <Records>
         <Card as={Record}>
