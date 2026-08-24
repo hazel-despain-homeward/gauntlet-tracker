@@ -102,10 +102,10 @@ export default function App() {
         }
       : null);
 
-  const handleEntry = async (team: string, seconds: number | null, dnp: boolean) => {
+  const handleEntry = async (team: string, seconds: number | null, dnp: boolean, dnf = false) => {
     try {
       setError(null);
-      const resp = await api.setEntry(team, seconds, dnp);
+      const resp = await api.setEntry(team, seconds, dnp, dnf);
       setView(resp.view);
       // The 7th report auto-finalizes and posts to Slack on the server.
       if (resp.finalized) {
@@ -160,7 +160,7 @@ export default function App() {
   }, [selectedTeam, view]);
 
   const myEntry = selectedTeam && activeWeek ? activeWeek.entries[selectedTeam] : undefined;
-  const myReported = !!(myEntry && (myEntry.dnp || myEntry.seconds != null));
+  const myReported = !!(myEntry && (myEntry.dnp || myEntry.dnf || myEntry.seconds != null));
 
   return (
     <>
@@ -208,6 +208,7 @@ export default function App() {
                 team={selectedTeam}
                 onLog={(seconds) => handleEntry(selectedTeam, seconds, false)}
                 onDnp={() => handleEntry(selectedTeam, null, true)}
+                onDnf={() => handleEntry(selectedTeam, null, false, true)}
                 onViewRules={() => setRulesOpen(true)}
                 onEdit={() => setEditing(true)}
                 onChangeTeam={changeTeam}

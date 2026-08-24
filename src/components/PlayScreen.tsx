@@ -158,6 +158,11 @@ const DnpBtn = styled(LinkBtn)`
   color: ${MESSAGING_COLOR.ACCENT.WARNING};
 `;
 
+const RunningDnp = styled.div`
+  text-align: center;
+  margin-top: 12px;
+`;
+
 const BottomLinks = styled.div`
   display: flex;
   gap: 18px;
@@ -193,12 +198,13 @@ interface Props {
   team: string;
   onLog: (seconds: number) => void;
   onDnp: () => void;
+  onDnf: () => void;
   onViewRules: () => void;
   onEdit: () => void;
   onChangeTeam: () => void;
 }
 
-export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onChangeTeam }: Props) {
+export function PlayScreen({ week, team, onLog, onDnp, onDnf, onViewRules, onEdit, onChangeTeam }: Props) {
   const [running, setRunning] = useState(false);
   const [logging, setLogging] = useState(false);
   const [ms, setMs] = useState(0);
@@ -241,7 +247,20 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onCh
   };
 
   const dnp = () => {
-    if (window.confirm(`Mark ${team} as “Did not play” for ${week.label}?`)) onDnp();
+    if (window.confirm(`Mark ${team} as “Did not play” for ${week.label}?`)) {
+      halt();
+      onDnp();
+    }
+  };
+  const couldntFinish = () => {
+    if (
+      window.confirm(
+        `Mark ${team} as “Didn’t finish” for ${week.label}? You played but couldn’t finish a game, so no time is recorded.`,
+      )
+    ) {
+      halt();
+      onDnf();
+    }
   };
 
   return (
@@ -276,19 +295,24 @@ export function PlayScreen({ week, team, onLog, onDnp, onViewRules, onEdit, onCh
             </Btn>
           </Buttons>
         ) : (
-          <Buttons>
-            <Btn $variant="secondary" onClick={reset}>
-              Reset
-            </Btn>
-            <Btn $variant="primary" onClick={stop}>
-              Stop
-            </Btn>
-          </Buttons>
+          <>
+            <Buttons>
+              <Btn $variant="secondary" onClick={reset}>
+                Reset
+              </Btn>
+              <Btn $variant="primary" onClick={stop}>
+                Stop
+              </Btn>
+            </Buttons>
+            <RunningDnp>
+              <DnpBtn onClick={couldntFinish}>Played, but couldn’t finish a game</DnpBtn>
+            </RunningDnp>
+          </>
         )}
 
         <Foot>
           <LinkBtn onClick={onViewRules}>View rules</LinkBtn>
-          <DnpBtn onClick={dnp}>We didn’t play</DnpBtn>
+          {!running && !logging && <DnpBtn onClick={dnp}>We didn’t play</DnpBtn>}
         </Foot>
       </Card>
 

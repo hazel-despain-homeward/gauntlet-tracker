@@ -138,7 +138,7 @@ def format_time(seconds: Optional[int]) -> str:
 
 def entry_reported(week: Dict[str, Any], team_name: str) -> bool:
     e = week.get("entries", {}).get(team_name)
-    return bool(e) and (bool(e.get("dnp")) or e.get("seconds") is not None)
+    return bool(e) and (bool(e.get("dnp")) or bool(e.get("dnf")) or e.get("seconds") is not None)
 
 
 def progress(week: Dict[str, Any], teams: List[Dict[str, Any]]) -> Dict[str, int]:
@@ -167,8 +167,11 @@ def compute_winner(week: Dict[str, Any], teams: List[Dict[str, Any]]) -> Optiona
 
 
 def _played(week: Dict[str, Any], team_name: str) -> bool:
+    """Attendance: they showed up and played (a finished time OR a did-not-finish)."""
     e = week.get("entries", {}).get(team_name)
-    return bool(e) and not e.get("dnp") and e.get("seconds") is not None
+    if not e or e.get("dnp"):
+        return False
+    return e.get("seconds") is not None or bool(e.get("dnf"))
 
 
 def _win_streak(weeks: List[Dict[str, Any]], winner: str) -> int:
@@ -206,6 +209,9 @@ def build_slack_message(
         "{} {}: {}".format(medals[i] if i < len(medals) else "  •", r["team"], format_time(r["seconds"]))
         for i, r in enumerate(ranked)
     ]
+    for t in teams:
+        if (week.get("entries", {}).get(t["name"]) or {}).get("dnf"):
+            lines.append("  • {}: Didn't finish".format(t["name"]))
     for t in teams:
         if (week.get("entries", {}).get(t["name"]) or {}).get("dnp"):
             lines.append("  • {}: Did not play".format(t["name"]))
@@ -278,7 +284,8 @@ router = APIRouter()
 class EntryIn(BaseModel):
     team: str
     seconds: Optional[int] = None
-    dnp: bool = False
+    dnp: bool = False  # did not play at all
+    dnf: bool = False  # played, but couldn't finish a game (no valid time)
 
 
 def _active_week(state: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -333,9 +340,11 @@ def set_entry(body: EntryIn) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Unknown team: " + body.team)
 
     if body.dnp:
-        week["entries"][body.team] = {"seconds": None, "dnp": True}
+        week["entries"][body.team] = {"seconds": None, "dnp": True, "dnf": False}
+    elif body.dnf:
+        week["entries"][body.team] = {"seconds": None, "dnp": False, "dnf": True}
     elif body.seconds is not None and body.seconds >= 0:
-        week["entries"][body.team] = {"seconds": int(body.seconds), "dnp": False}
+        week["entries"][body.team] = {"seconds": int(body.seconds), "dnp": False, "dnf": False}
     else:
         week["entries"].pop(body.team, None)
 

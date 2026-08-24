@@ -130,7 +130,7 @@ const Name = styled.div`
   }
 `;
 
-const Val = styled.div<{ $kind: 'time' | 'waiting' | 'dnp' }>`
+const Val = styled.div<{ $kind: 'time' | 'waiting' | 'dnp' | 'dnf' }>`
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 15px;
@@ -140,7 +140,9 @@ const Val = styled.div<{ $kind: 'time' | 'waiting' | 'dnp' }>`
       ? `color:${TEXT_COLOR.PRIMARY};`
       : p.$kind === 'dnp'
         ? `color:${MESSAGING_COLOR.ACCENT.WARNING};font-size:12px;`
-        : `color:${TEXT_COLOR.SECONDARY};font-size:12px;font-weight:600;`}
+        : p.$kind === 'dnf'
+          ? `color:${MESSAGING_COLOR.ACCENT.INFO};font-size:12px;`
+          : `color:${TEXT_COLOR.SECONDARY};font-size:12px;font-weight:600;`}
 `;
 
 const FootNote = styled.div`
@@ -211,12 +213,14 @@ export function WeekResults({
 
   const played = teams
     .map((t) => ({ name: t.name, entry: week.entries[t.name] }))
-    .filter((r) => r.entry && !r.entry.dnp && r.entry.seconds != null)
+    .filter((r) => r.entry && !r.entry.dnp && !r.entry.dnf && r.entry.seconds != null)
     .sort((a, b) => (a.entry!.seconds ?? 0) - (b.entry!.seconds ?? 0));
+  const dnf = teams.filter((t) => week.entries[t.name]?.dnf);
   const dnp = teams.filter((t) => week.entries[t.name]?.dnp);
-  const waiting = teams.filter(
-    (t) => !week.entries[t.name] || (!week.entries[t.name]!.dnp && week.entries[t.name]!.seconds == null),
-  );
+  const waiting = teams.filter((t) => {
+    const e = week.entries[t.name];
+    return !e || (!e.dnp && !e.dnf && e.seconds == null);
+  });
 
   const remaining = progress.total - progress.reported;
   const pct = progress.total ? Math.round((progress.reported / progress.total) * 100) : 0;
@@ -255,11 +259,11 @@ export function WeekResults({
               <Val $kind="time">{formatTime(r.entry!.seconds)}</Val>
             </Row>
           ))}
-          {waiting.map((t) => (
+          {dnf.map((t) => (
             <Row key={t.name} $me={t.name === myTeam} $muted>
               <Rank>·</Rank>
               {NameCell(t.name)}
-              <Val $kind="waiting">Waiting…</Val>
+              <Val $kind="dnf">Didn’t finish</Val>
             </Row>
           ))}
           {dnp.map((t) => (
@@ -267,6 +271,13 @@ export function WeekResults({
               <Rank>·</Rank>
               {NameCell(t.name)}
               <Val $kind="dnp">Did not play</Val>
+            </Row>
+          ))}
+          {waiting.map((t) => (
+            <Row key={t.name} $me={t.name === myTeam} $muted>
+              <Rank>·</Rank>
+              {NameCell(t.name)}
+              <Val $kind="waiting">Waiting…</Val>
             </Row>
           ))}
         </Rows>

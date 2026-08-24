@@ -6,6 +6,7 @@ export interface Team {
 export interface Entry {
   seconds: number | null;
   dnp: boolean;
+  dnf?: boolean; // played but couldn't finish a game (no valid time)
 }
 
 export type WeekStatus = 'open' | 'final';

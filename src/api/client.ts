@@ -22,10 +22,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   getState: () => request<StateView>('/state'),
-  setEntry: (team: string, seconds: number | null, dnp: boolean) =>
+  setEntry: (team: string, seconds: number | null, dnp: boolean, dnf = false) =>
     request<EntryResponse>('/entry', {
       method: 'POST',
-      body: JSON.stringify({ team, seconds, dnp }),
+      body: JSON.stringify({ team, seconds, dnp, dnf }),
     }),
   finalize: () => request<FinalizeResult>('/finalize', { method: 'POST' }),
   nextWeek: () => request<StateView>('/week/next', { method: 'POST' }),

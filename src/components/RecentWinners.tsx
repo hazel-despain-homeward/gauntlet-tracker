@@ -92,13 +92,12 @@ export function RecentWinners({ weeks, teams }: Props) {
       <SectionEyebrow>Recent winners</SectionEyebrow>
       <Card>
         {finals.map((w) => {
-          const played = teams
-            .map((t) => ({ name: t.name, entry: w.entries[t.name] }))
-            .filter((r) => r.entry && (r.entry.dnp || r.entry.seconds !== null));
-          const ranked = played
-            .filter((r) => !r.entry!.dnp && r.entry!.seconds !== null)
+          const all = teams.map((t) => ({ name: t.name, entry: w.entries[t.name] }));
+          const ranked = all
+            .filter((r) => r.entry && !r.entry.dnp && !r.entry.dnf && r.entry.seconds !== null)
             .sort((a, b) => (a.entry!.seconds ?? 0) - (b.entry!.seconds ?? 0));
-          const dnp = played.filter((r) => r.entry!.dnp);
+          const dnf = all.filter((r) => r.entry?.dnf);
+          const dnp = all.filter((r) => r.entry?.dnp);
 
           return (
             <Item key={w.id}>
@@ -114,6 +113,11 @@ export function RecentWinners({ weeks, teams }: Props) {
                   <Chip key={r.name} $win={r.name === w.winner}>
                     {r.name === w.winner ? '🏆 ' : ''}
                     {r.name} · {formatTime(r.entry!.seconds)}
+                  </Chip>
+                ))}
+                {dnf.map((r) => (
+                  <Chip key={r.name} $dnp>
+                    {r.name} · DNF
                   </Chip>
                 ))}
                 {dnp.map((r) => (
