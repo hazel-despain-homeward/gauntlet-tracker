@@ -79,7 +79,7 @@ const ResetBtn = styled.button`
 interface Props {
   week: Week;
   teams: Team[];
-  onEntry: (team: string, seconds: number | null, dnp: boolean) => void;
+  onEntry: (team: string, seconds: number | null, dnp: boolean, dnf: boolean) => void;
   onDone: () => void;
   onReset: () => void;
 }
@@ -101,7 +101,7 @@ export function EditTimes({ week, teams, onEntry, onDone, onReset }: Props) {
             key={t.id}
             name={t.name}
             entry={week.entries[t.name]}
-            onChange={(seconds, dnp) => onEntry(t.name, seconds, dnp)}
+            onChange={(seconds, dnp, dnf) => onEntry(t.name, seconds, dnp, dnf)}
           />
         ))}
       </Card>

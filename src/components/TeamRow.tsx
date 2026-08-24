@@ -12,7 +12,7 @@ import {
 import type { Entry } from '../types';
 import { formatTime, parseTime } from '../util/time';
 
-type Status = 'waiting' | 'logged' | 'dnp';
+type Status = 'waiting' | 'logged' | 'dnp' | 'dnf';
 
 const Row = styled.div<{ $status: Status }>`
   display: grid;
@@ -32,14 +32,6 @@ const Name = styled.div`
   font-weight: 600;
   font-size: 14.5px;
   color: ${TEXT_COLOR.PRIMARY};
-
-  small {
-    display: block;
-    font-weight: 500;
-    font-size: 11px;
-    color: ${TEXT_COLOR.SECONDARY};
-    margin-top: 1px;
-  }
 `;
 
 const Pill = styled.span<{ $status: Status }>`
@@ -54,17 +46,21 @@ const Pill = styled.span<{ $status: Status }>`
       ? `background:${MESSAGING_COLOR.BACKGROUND.DECORATIVE};color:${CTA_COLOR.DARK};`
       : p.$status === 'dnp'
         ? `background:${MESSAGING_COLOR.BACKGROUND.WARNING};color:${MESSAGING_COLOR.ACCENT.WARNING};`
-        : `background:${NAMED_COLOR.LIGHTGREY};color:${TEXT_COLOR.SECONDARY};`}
+        : p.$status === 'dnf'
+          ? `background:${MESSAGING_COLOR.BACKGROUND.INFO};color:${MESSAGING_COLOR.ACCENT.INFO};`
+          : `background:${NAMED_COLOR.LIGHTGREY};color:${TEXT_COLOR.SECONDARY};`}
 `;
 
-const TimeField = styled.div`
+const Controls = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 `;
 
 const Input = styled.input<{ $filled: boolean }>`
-  width: 96px;
+  width: 92px;
   text-align: center;
   font-family: inherit;
   font-variant-numeric: tabular-nums;
@@ -85,13 +81,11 @@ const Input = styled.input<{ $filled: boolean }>`
     border-color: ${FORM_FIELDS.BORDER_FOCUSED};
     box-shadow: 0 0 0 3px rgba(32, 124, 132, 0.16);
   }
-
   &::placeholder {
     color: ${TEXT_COLOR.SECONDARY};
     font-weight: 500;
     letter-spacing: 0.05em;
   }
-
   &:disabled {
     background: ${NAMED_COLOR.LIGHTGREY};
     color: ${TEXT_COLOR.TERTIARY};
@@ -99,10 +93,10 @@ const Input = styled.input<{ $filled: boolean }>`
   }
 `;
 
-const Dnp = styled.label`
+const Toggle = styled.label`
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   font-size: 12px;
   color: ${TEXT_COLOR.SECONDARY};
   cursor: pointer;
@@ -117,53 +111,33 @@ const Dnp = styled.label`
   }
 `;
 
-const Locked = styled.div`
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 15px;
-  color: ${TEXT_COLOR.PRIMARY};
-`;
-
 interface Props {
   name: string;
   entry: Entry | undefined;
-  disabled?: boolean;
-  onChange: (seconds: number | null, dnp: boolean) => void;
+  onChange: (seconds: number | null, dnp: boolean, dnf: boolean) => void;
 }
 
-export function TeamRow({ name, entry, disabled, onChange }: Props) {
+export function TeamRow({ name, entry, onChange }: Props) {
   const dnp = !!entry?.dnp;
+  const dnf = !!entry?.dnf;
   const seconds = entry?.seconds ?? null;
-  const status: Status = dnp ? 'dnp' : seconds !== null ? 'logged' : 'waiting';
+  const status: Status = dnp ? 'dnp' : dnf ? 'dnf' : seconds !== null ? 'logged' : 'waiting';
 
   const [text, setText] = useState(seconds !== null ? formatTime(seconds) : '');
 
-  // Keep the field in sync when state changes elsewhere (e.g. another device).
   useEffect(() => {
     setText(seconds !== null ? formatTime(seconds) : '');
   }, [seconds]);
 
-  if (disabled) {
-    // Finalized week: read-only display.
-    return (
-      <Row $status={status}>
-        <Name>{name}</Name>
-        <Pill $status={status}>{status === 'dnp' ? 'Did not play' : 'Logged'}</Pill>
-        <Locked>{dnp ? '—' : formatTime(seconds)}</Locked>
-      </Row>
-    );
-  }
-
-  // Live mask so times can be typed without a colon: "820" -> "8:20", "1014" -> "10:14".
+  // Live mask so times can be typed without a colon: "820" -> "8:20".
   const mask = (raw: string) => {
     const d = raw.replace(/\D/g, '').slice(0, 4);
-    if (d.length <= 2) return d;
-    return d.slice(0, d.length - 2) + ':' + d.slice(d.length - 2);
+    return d.length <= 2 ? d : d.slice(0, d.length - 2) + ':' + d.slice(d.length - 2);
   };
 
   const commit = () => {
     if (!text.trim()) {
-      onChange(null, false);
+      onChange(null, false, false);
       return;
     }
     const parsed = parseTime(text);
@@ -172,40 +146,56 @@ export function TeamRow({ name, entry, disabled, onChange }: Props) {
       return;
     }
     setText(formatTime(parsed));
-    onChange(parsed, false);
+    onChange(parsed, false, false);
   };
+
+  const label =
+    status === 'logged'
+      ? 'Logged'
+      : status === 'dnp'
+        ? 'Did not play'
+        : status === 'dnf'
+          ? 'Didn’t finish'
+          : 'Waiting';
 
   return (
     <Row $status={status}>
       <Name>{name}</Name>
-      <Pill $status={status}>
-        {status === 'logged' ? 'Logged' : status === 'dnp' ? 'Did not play' : 'Waiting'}
-      </Pill>
-      <TimeField>
+      <Pill $status={status}>{label}</Pill>
+      <Controls>
         <Input
           $filled={status === 'logged'}
           type="text"
           inputMode="numeric"
           placeholder="––:––"
           aria-label={`${name} time in minutes and seconds`}
-          value={dnp ? '' : text}
-          disabled={dnp}
+          value={dnp || dnf ? '' : text}
+          disabled={dnp || dnf}
           onChange={(e) => setText(mask(e.target.value))}
           onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
         />
-        <Dnp>
+        <Toggle>
+          <input
+            type="checkbox"
+            checked={dnf}
+            aria-label={`${name} didn’t finish`}
+            onChange={(e) => onChange(null, false, e.target.checked)}
+          />
+          DNF
+        </Toggle>
+        <Toggle>
           <input
             type="checkbox"
             checked={dnp}
             aria-label={`${name} did not play`}
-            onChange={(e) => onChange(null, e.target.checked)}
+            onChange={(e) => onChange(null, e.target.checked, false)}
           />
           DNP
-        </Dnp>
-      </TimeField>
+        </Toggle>
+      </Controls>
     </Row>
   );
 }
