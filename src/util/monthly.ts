@@ -80,3 +80,32 @@ export function computeMonthly(weeks: Week[], teams: Team[]): MonthData[] {
   months.sort((a, b) => b.key.localeCompare(a.key)); // newest month first
   return months;
 }
+
+/** Season-to-date: total points across every month. */
+export function computeCumulative(months: MonthData[], teams: Team[]): MonthStanding[] {
+  const acc = new Map<string, MonthStanding>();
+  teams.forEach((t) =>
+    acc.set(t.name, { team: t.name, points: 0, gold: 0, silver: 0, bronze: 0, weeks: 0 }),
+  );
+  for (const m of months) {
+    for (const s of m.standings) {
+      const a = acc.get(s.team);
+      if (!a) continue;
+      a.points += s.points;
+      a.gold += s.gold;
+      a.silver += s.silver;
+      a.bronze += s.bronze;
+      a.weeks += s.weeks;
+    }
+  }
+  return [...acc.values()]
+    .filter((s) => s.weeks > 0)
+    .sort(
+      (a, b) =>
+        b.points - a.points ||
+        b.gold - a.gold ||
+        b.silver - a.silver ||
+        b.bronze - a.bronze ||
+        a.team.localeCompare(b.team),
+    );
+}

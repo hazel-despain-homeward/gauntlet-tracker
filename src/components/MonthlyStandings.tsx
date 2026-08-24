@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { BORDER_COLOR, CTA_COLOR, NAMED_COLOR, TEXT_COLOR } from '../design/tokens';
 import type { Team, Week } from '../types';
 import { teamColor } from '../util/teamColor';
-import { computeMonthly } from '../util/monthly';
+import { computeCumulative, computeMonthly, type MonthStanding } from '../util/monthly';
 import { Card, SectionEyebrow } from './ui';
 
 const Head = styled.div`
@@ -183,8 +183,9 @@ export function MonthlyStandings({ weeks, teams }: Props) {
   if (months.length === 0) return null;
 
   const active = months.find((m) => m.key === monthKey) ?? months[0];
+  const cumulative = computeCumulative(months, teams);
+  const totalWeeks = months.reduce((a, m) => a + m.weekCount, 0);
   const colorOf = (name: string) => teamColor(teams.findIndex((t) => t.name === name));
-  const maxPts = active.standings[0]?.points || 1;
   const medals = ['🥇', '🥈', '🥉'];
 
   const breakdown = (s: { gold: number; silver: number; bronze: number; weeks: number }) => {
@@ -196,71 +197,80 @@ export function MonthlyStandings({ weeks, teams }: Props) {
     return parts.join(' · ');
   };
 
+  const barRows = (list: MonthStanding[]) => {
+    const max = list[0]?.points || 1;
+    return list.map((s, i) => (
+      <Row key={s.team}>
+        <Rank>{i + 1}</Rank>
+        <TeamBar>
+          <div className="name">
+            <span className="dot" style={{ background: colorOf(s.team) }} />
+            {s.team}
+          </div>
+          <div className="track">
+            <i style={{ width: `${Math.round((s.points / max) * 100)}%`, background: colorOf(s.team) }} />
+          </div>
+        </TeamBar>
+        <Right>
+          <div className="pts">{s.points} pts</div>
+          <div className="breakdown">{breakdown(s)}</div>
+        </Right>
+      </Row>
+    ));
+  };
+
   return (
-    <section style={{ marginBottom: '28px' }}>
-      <Head>
-        <div>
-          <SectionEyebrow>Monthly standings</SectionEyebrow>
-          <Title>Points race</Title>
-        </div>
-        <Picker
-          value={active.key}
-          onChange={(e) => setMonthKey(e.target.value)}
-          aria-label="Select month"
-        >
-          {months.map((m) => (
-            <option key={m.key} value={m.key}>
-              {m.label}
-            </option>
-          ))}
-        </Picker>
-      </Head>
-      <Sub>
-        {active.weekCount} week{active.weekCount === 1 ? '' : 's'} · weekly finishers score 5 · 4 · 3 · 2 · 1
-      </Sub>
+    <>
+      <section style={{ marginBottom: '28px' }}>
+        <Head>
+          <div>
+            <SectionEyebrow>Monthly standings</SectionEyebrow>
+            <Title>Points race</Title>
+          </div>
+          <Picker
+            value={active.key}
+            onChange={(e) => setMonthKey(e.target.value)}
+            aria-label="Select month"
+          >
+            {months.map((m) => (
+              <option key={m.key} value={m.key}>
+                {m.label}
+              </option>
+            ))}
+          </Picker>
+        </Head>
+        <Sub>
+          {active.weekCount} week{active.weekCount === 1 ? '' : 's'} · weekly finishers score 5 · 4 · 3 · 2 · 1
+        </Sub>
 
-      <Podium>
-        {active.standings.slice(0, 3).map((s, i) => (
-          <Spot key={s.team} $rank={i + 1}>
-            <div className="medal">{medals[i]}</div>
-            <div className="team">
-              <span className="dot" style={{ background: colorOf(s.team) }} />
-              {s.team}
-            </div>
-            <div className="pts">
-              {s.points} <small>pts</small>
-            </div>
-          </Spot>
-        ))}
-      </Podium>
-
-      <Card>
-        <Rows>
-          {active.standings.map((s, i) => (
-            <Row key={s.team}>
-              <Rank>{i + 1}</Rank>
-              <TeamBar>
-                <div className="name">
-                  <span className="dot" style={{ background: colorOf(s.team) }} />
-                  {s.team}
-                </div>
-                <div className="track">
-                  <i
-                    style={{
-                      width: `${Math.round((s.points / maxPts) * 100)}%`,
-                      background: colorOf(s.team),
-                    }}
-                  />
-                </div>
-              </TeamBar>
-              <Right>
-                <div className="pts">{s.points} pts</div>
-                <div className="breakdown">{breakdown(s)}</div>
-              </Right>
-            </Row>
+        <Podium>
+          {active.standings.slice(0, 3).map((s, i) => (
+            <Spot key={s.team} $rank={i + 1}>
+              <div className="medal">{medals[i]}</div>
+              <div className="team">
+                <span className="dot" style={{ background: colorOf(s.team) }} />
+                {s.team}
+              </div>
+              <div className="pts">
+                {s.points} <small>pts</small>
+              </div>
+            </Spot>
           ))}
-        </Rows>
-      </Card>
-    </section>
+        </Podium>
+
+        <Card>
+          <Rows>{barRows(active.standings)}</Rows>
+        </Card>
+      </section>
+
+      <section style={{ marginBottom: '28px' }}>
+        <SectionEyebrow>Season to date · {totalWeeks} week{totalWeeks === 1 ? '' : 's'}</SectionEyebrow>
+        <Title>Overall points</Title>
+        <Sub>Every week this season, all months combined.</Sub>
+        <Card>
+          <Rows>{barRows(cumulative)}</Rows>
+        </Card>
+      </section>
+    </>
   );
 }
