@@ -288,6 +288,10 @@ class EntryIn(BaseModel):
     dnf: bool = False  # played, but couldn't finish a game (no valid time)
 
 
+class AdminEntryIn(EntryIn):
+    week_id: str  # correct a specific (incl. already-closed) week
+
+
 def _active_week(state: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     for w in state["weeks"]:
         if w["status"] == "open":
@@ -413,6 +417,34 @@ def cron_auto_finalize() -> Dict[str, Any]:
         "auto_dnp": auto_dnp,
         "slack_posted": bool(finalized and finalized["slack"]["posted"]),
     }
+
+
+@router.post("/admin/set-entry")
+def admin_set_entry(body: AdminEntryIn) -> Dict[str, Any]:
+    """Correct one team's entry on any week (including already-closed ones).
+    Finalized weeks get their winner recomputed so stats stay consistent."""
+    state = get_or_seed()
+    week = next((w for w in state["weeks"] if w["id"] == body.week_id), None)
+    if week is None:
+        raise HTTPException(status_code=404, detail="Unknown week: " + body.week_id)
+    if not any(t["name"] == body.team for t in state["teams"]):
+        raise HTTPException(status_code=404, detail="Unknown team: " + body.team)
+
+    if body.dnp:
+        week["entries"][body.team] = {"seconds": None, "dnp": True, "dnf": False}
+    elif body.dnf:
+        week["entries"][body.team] = {"seconds": None, "dnp": False, "dnf": True}
+    elif body.seconds is not None and body.seconds >= 0:
+        week["entries"][body.team] = {"seconds": int(body.seconds), "dnp": False, "dnf": False}
+    else:
+        week["entries"].pop(body.team, None)
+
+    previous_winner = week.get("winner")
+    if week["status"] == "final":
+        week["winner"] = compute_winner(week, state["teams"])
+
+    save_state(state)
+    return {"week": week, "previous_winner": previous_winner}
 
 
 @router.post("/sync-teams")
